@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
+    }
+
+    // The allowlist can be read only by the account whose UID is the document ID.
+    // Clients cannot add or modify administrator records.
+    match /admins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    // Public portfolio: visitors may read published projects only.
+    // Admins can manage drafts and published projects.
+    match /projects/{projectId} {
+      allow read: if isAdmin() || resource.data.status == 'published';
+      allow create, update, delete: if isAdmin();
+    }
+
+    // The public site reads only the main public settings document.
+    match /siteSettings/{settingsId} {
+      allow read: if isAdmin() || settingsId == 'main';
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Public visitors may submit requests but cannot read or change submissions.
+    match /quoteRequests/{requestId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'projectType', 'features', 'budget', 'timeline', 'name', 'email',
+          'company', 'phone', 'message', 'createdAt', 'status'
+        ])
+        && request.resource.data.keys().hasAll([
+          'projectType', 'features', 'budget', 'timeline', 'name', 'email',
+          'company', 'phone', 'message', 'createdAt', 'status'
+        ])
+        && request.resource.data.projectType is string
+        && request.resource.data.projectType.size() <= 120
+        && request.resource.data.features is list
+        && request.resource.data.features.size() <= 40
+        && request.resource.data.budget is string
+        && request.resource.data.budget.size() <= 120
+        && request.resource.data.timeline is string
+        && request.resource.data.timeline.size() <= 120
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.company is string
+        && request.resource.data.company.size() <= 160
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 50
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 10000
+        && request.resource.data.status == 'new'
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /trash/{trashId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // Deny all other collections by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Storage uploads are not used by this site. Deny access unless a future
+    // explicitly reviewed requirement changes this policy.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

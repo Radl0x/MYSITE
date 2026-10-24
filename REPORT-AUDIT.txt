@@ -1,0 +1,25 @@
+RAPPORTO VERIFICA PACCHETTO CORRETTO
+===================================
+
+Controlli automatici dopo le modifiche:
+- index.html: sintassi dei blocchi JavaScript controllata con Node.js; nessun errore sintattico.
+- admin.html: sintassi del modulo JavaScript controllata con Node.js; nessun errore sintattico.
+- anubis.html: sintassi dei blocchi JavaScript controllata con Node.js; nessun errore sintattico.
+- Nessun ID HTML duplicato trovato nei tre file principali.
+- Riferimento a anubis.html mantenuto perché usato dal sito.
+- Immagine fallback mantenuta perché usata dalle card progetto.
+- Eliminati dal pacchetto di pubblicazione i backup annidati e debug.log; l'archivio sorgente originale resta invariato.
+
+MODIFICHE FUNZIONALI / SICUREZZA:
+1. CMS: verifica che esista admins/{UID} con enabled=true prima di mostrare la dashboard.
+2. Firebase: aggiunte regole Firestore con allowlist admin, progetti pubblici solo se published, richieste pubbliche in sola creazione e dati privati accessibili solo agli admin.
+3. CMS: rimosso Firebase Storage e sostituito upload immagini con URL HTTPS.
+4. Sito: rendering del titolo dinamico ricostruito con whitelist di tag inline; attributi e tag non consentiti non vengono copiati.
+5. CMS: toast renderizzati con text node per evitare interpretazione HTML dei messaggi.
+6. Sito: URL delle immagini progetto filtrati tramite normalizeProjectURL.
+
+LIMITI NON RISOLVIBILI DALL'ARCHIVIO LOCALE:
+- Non è stato possibile verificare le regole attualmente pubblicate in Firebase né applicare le nuove regole al progetto remoto.
+- Non è stato possibile effettuare un test live contro Authentication/Firestore né test browser interattivi senza accesso al progetto e alle credenziali.
+- La dashboard resta intenzionalmente non accessibile fino all'inserimento manuale del documento admins/{UID}; vedere README-PRIMA-PUBBLICAZIONE.txt.
+- Nessun sistema antispam/rate-limit è stato aggiunto: le regole validano campi e autorizzazioni, ma non limitano la frequenza degli invii.

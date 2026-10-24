@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luca Bassu | Cyber & 3D Web Architect — Immersive Experience</title>
+  <meta name="description" content="Portfolio ufficiale di Luca Bassu: sviluppatore web indipendente, interfacce futuristiche, WebGL e Cloud Architecture.">
+  
+  <!-- FontAwesome Kit -->
+  <script src="https://kit.fontawesome.com/223110ab61.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --bg-primary: #020617;
+      --bg-secondary: #0f172a;
+      --bg-card: rgba(15, 23, 42, 0.85);
+      --border-tech: rgba(0, 243, 255, 0.3);
+      --accent-cyan: #00f3ff;
+      --accent-blue: #3b82f6;
+      --accent-green: #22c55e;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-sans: 'Inter', system-ui, sans-serif;
+    }
+
+    /* Stili dinamici in modalità Matrix */
+    body.matrix-theme {
+      --bg-primary: #021006;
+      --bg-secondary: #05200c;
+      --bg-card: rgba(5, 32, 12, 0.85);
+      --border-tech: rgba(34, 197, 94, 0.4);
+      --accent-cyan: #22c55e;
+      --accent-blue: #15803d;
+      --accent-purple: #4ade80;
+      --text-main: #dcfce7;
+      --text-muted: #86efac;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      transition: background 0.5s ease;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    /* CUSTOM CURSOR */
+    .custom-cursor {
+      position: fixed;
+      top: 0; left: 0;
+      width: 10px; height: 10px;
+      background: var(--accent-cyan);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 99999;
+      transition: transform 0.1s ease, background 0.3s ease;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px var(--accent-cyan);
+    }
+    .custom-cursor-follower {
+      position: fixed;
+      top: 0; left: 0;
+      width: 36px; height: 36px;
+      border: 1px solid rgba(0, 243, 255, 0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 99998;
+      transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), width 0.3s, height 0.3s, border-color 0.3s;
+      transform: translate(-50%, -50%);
+    }
+    body.cursor-hover .custom-cursor {
+      transform: translate(-50%, -50%) scale(2.2);
+      background: var(--accent-purple);
+      box-shadow: 0 0 15px var(--accent-purple);
+    }
+    body.cursor-hover .custom-cursor-follower {
+      transform: translate(-50%, -50%) scale(1.4);
+      border-color: var(--accent-purple);
+    }
+
+    a, button, input, select, textarea { cursor: none; }
+
+    a { color: var(--accent-cyan); text-decoration: none; transition: 0.2s ease; }
+    a:hover { color: #fff; text-shadow: 0 0 10px var(--accent-cyan); }
+
+    .container { width: 100%; max-width: 1350px; margin: 0 auto; padding: 0 2rem; position: relative; }
+
+    #global-bg-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
+    }
+
+    /* Header */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-tech); height: 80px;
+      display: flex; align-items: center; transition: background 0.3s, border-color 0.3s;
+    }
+    body.matrix-theme header { background: rgba(2, 16, 6, 0.85); }
+
+    .header-inner { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .logo { 
+      font-family: var(--font-mono); font-weight: 800; font-size: 1.25rem; letter-spacing: 2px; color: #fff;
+      display: flex; align-items: center; gap: 8px; position: relative;
+    }
+    .logo span { color: var(--accent-cyan); text-shadow: 0 0 10px var(--accent-cyan); transition: color 0.3s; }
+
+    .nav-links { display: flex; gap: 2rem; align-items: center; }
+    .nav-link { color: var(--text-muted); font-size: 0.9rem; font-family: var(--font-mono); text-transform: uppercase; position: relative; padding: 0.5rem 0; transition: color 0.3s; }
+    .nav-link::after {
+      content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--accent-cyan); transition: width 0.3s, background-color 0.3s; box-shadow: 0 0 8px var(--accent-cyan);
+    }
+    .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+    .nav-link:hover, .nav-link.active { color: var(--accent-cyan); text-shadow: 0 0 10px rgba(0,243,255,0.4); }
+
+    .sound-toggle {
+      background: rgba(0, 243, 255, 0.1); border: 1px solid var(--border-tech); color: var(--accent-cyan);
+      width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      transition: 0.3s;
+    }
+    .sound-toggle:hover { background: var(--accent-cyan); color: #000; box-shadow: 0 0 15px var(--accent-cyan); }
+
+    .lang-switch { display: flex; background: var(--bg-secondary); border: 1px solid var(--border-tech); border-radius: 4px; padding: 2px; transition: background 0.3s, border-color 0.3s; }
+    .lang-btn { background: none; border: none; padding: 4px 8px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); cursor: none; }
+    .lang-btn.active { background: var(--accent-cyan); color: #000; font-weight: 700; box-shadow: 0 0 10px var(--accent-cyan); transition: background 0.3s; }
+
+    .mobile-menu-btn { display: none; background: none; border: none; color: var(--accent-cyan); font-size: 1.5rem; }
+
+    /* Hero */
+    .hero {
+      position: relative; width: 100vw; min-height: 100vh; display: flex; align-items: center;
+      padding-top: 100px; padding-bottom: 60px; z-index: 1; overflow: hidden;
+    }
+    #hero-3d-container {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: auto;
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: center;
+      position: relative; z-index: 2; width: 100%; pointer-events: none;
+    }
+    .hero-content, .terminal-window { pointer-events: auto; }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.4rem 1rem; background: rgba(0, 243, 255, 0.08);
+      border: 1px solid var(--border-tech); border-radius: 20px;
+      font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent-cyan);
+      margin-bottom: 1.5rem; box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+      transition: background 0.3s, border-color 0.3s, color 0.3s;
+    }
+    .hero-title {
+      font-size: clamp(2.2rem, 4.5vw, 3.8rem); font-weight: 900; line-height: 1.1;
+      letter-spacing: -0.02em; margin-bottom: 1.5rem;
+    }
+    .hero-title span { color: var(--accent-cyan); text-shadow: 0 0 20px rgba(0,243,255,0.4); transition: color 0.3s; }
+    .hero-desc {
+      font-size: 1.05rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.7; transition: color 0.3s;
+    }
+    .hero-actions {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+    }
+
+    /* Terminale IDE Interattivo */
+    .terminal-window {
+      background: rgba(13, 17, 23, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 243, 255, 0.15);
+      overflow: hidden;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      backdrop-filter: blur(12px);
+      transition: box-shadow 0.3s, border-color 0.3s;
+    }
+
+    .terminal-header {
+      background: #161b22;
+      padding: 0.6rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .terminal-dots { display: flex; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+    .terminal-title { color: var(--text-muted); font-size: 0.78rem; opacity: 0.8; }
+
+    .terminal-body {
+      padding: 1.5rem;
+      line-height: 1.6;
+      color: #c9d1d9;
+      white-space: pre-wrap;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    /* SCROLLBAR PERSONALIZZATA PER IL TERMINALE */
+    .terminal-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    .terminal-body::-webkit-scrollbar-track {
+      background: rgba(2, 6, 23, 0.5);
+    }
+    .terminal-body::-webkit-scrollbar-thumb {
+      background: var(--border-tech);
+      border-radius: 3px;
+    }
+    .terminal-body::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-cyan);
+    }
+
+    .code-comment { color: #8b949e; font-style: italic; }
+    .code-keyword { color: #ff7b72; }
+    .code-var { color: #79c0ff; }
+    .code-prop { color: #d2a8ff; }
+    .code-str { color: #a5d6ff; }
+    .code-func { color: #d2a8ff; }
+
+    .terminal-input-row {
+      display: flex; align-items: center; background: #090d16; padding: 0.5rem 1rem; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .terminal-prompt { color: var(--accent-cyan); margin-right: 8px; transition: color 0.3s; }
+    .terminal-input {
+      background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.85rem; width: 100%; outline: none;
+    }
+
+    .btn-tech {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem;
+      padding: 0.85rem 1.75rem; background: transparent; color: var(--accent-cyan);
+      border: 1px solid var(--accent-cyan); font-family: var(--font-mono); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; border-radius: 4px;
+      position: relative; overflow: hidden; transition: 0.3s;
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+    }
+    .btn-tech:hover { background: var(--accent-cyan); color: #000; box-shadow: 0 0 25px var(--accent-cyan); transform: translateY(-2px); }
+
+    /* Sezioni */
+    .section { padding: 120px 0; position: relative; z-index: 2; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(10px); transition: background 0.5s; }
+    body.matrix-theme .section { background: rgba(2, 16, 6, 0.85); }
+
+    .section-title {
+      font-family: var(--font-mono); font-size: 2rem; font-weight: 800; margin-bottom: 3rem;
+      display: flex; align-items: center; gap: 1rem; color: #fff;
+    }
+    .section-title::before { content: '//'; color: var(--accent-cyan); text-shadow: 0 0 10px var(--accent-cyan); transition: color 0.3s; }
+
+    .grid-services { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; }
+    .service-card {
+      background: var(--bg-card); border: 1px solid var(--border-tech); border-radius: 12px; padding: 2.5rem;
+      backdrop-filter: blur(12px); transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s, border-color 0.3s;
+      position: relative; overflow: hidden; transform-style: preserve-3d;
+    }
+    .service-card:hover { 
+      border-color: var(--accent-cyan); 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px rgba(0,243,255,0.2); 
+      transform: translateY(-8px) rotateX(2deg) rotateY(-2deg); 
+    }
+    .service-icon { font-family: var(--font-mono); color: var(--accent-cyan); font-size: 2rem; margin-bottom: 1.5rem; text-shadow: 0 0 15px rgba(0,243,255,0.4); transition: color 0.3s; }
+
+    .faq-list { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.2rem; }
+    .faq-item { 
+      background: var(--bg-card); border: 1px solid var(--border-tech); border-radius: 8px; 
+      overflow: hidden; backdrop-filter: blur(10px); transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+    }
+    .faq-item:hover { border-color: var(--accent-cyan); box-shadow: 0 0 20px rgba(0,243,255,0.15); }
+    .faq-q { 
+      font-weight: 700; font-family: var(--font-mono); color: var(--accent-cyan); 
+      padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; cursor: none;
+      transition: color 0.3s;
+    }
+    .faq-q i { transition: transform 0.3s ease, color 0.3s; }
+    .faq-item.active .faq-q i { transform: rotate(180deg); color: #fff; }
+    .faq-a-wrapper {
+      max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s, background 0.3s;
+      background: rgba(2, 6, 23, 0.5); padding: 0 1.5rem;
+    }
+    body.matrix-theme .faq-a-wrapper { background: rgba(2, 16, 6, 0.5); }
+    .faq-item.active .faq-a-wrapper { max-height: 200px; padding: 0 1.5rem 1.5rem 1.5rem; }
+    .faq-a { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; transition: color 0.3s; }
+
+    .quote-box {
+      background: var(--bg-card); border: 1px solid var(--border-tech); border-radius: 16px;
+      padding: 3rem; max-width: 900px; margin: 0 auto; backdrop-filter: blur(16px);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(0, 243, 255, 0.1);
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .step-indicator {
+      display: flex; justify-content: space-between; margin-bottom: 2.5rem; position: relative;
+    }
+    .step-indicator::before {
+      content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.1); z-index: 1; transform: translateY(-50%);
+    }
+    .step-dot {
+      width: 36px; height: 36px; background: var(--bg-primary); border: 2px solid var(--border-tech);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); position: relative; z-index: 2; transition: 0.3s;
+    }
+    .step-dot.active { border-color: var(--accent-cyan); color: var(--accent-cyan); box-shadow: 0 0 15px var(--accent-cyan); background: var(--bg-secondary); }
+    .step-dot.completed { border-color: var(--accent-green); color: var(--accent-green); background: rgba(34, 197, 94, 0.1); }
+
+    .config-step { display: none; }
+    .config-step.active { display: block; animation: fadeInStep 0.5s ease forwards; }
+    @keyframes fadeInStep { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+    .option-card {
+      background: var(--bg-primary); border: 1px solid var(--border-tech); border-radius: 8px;
+      padding: 1.5rem; text-align: left; cursor: none; transition: 0.3s; display: flex; flex-direction: column; gap: 8px;
+    }
+    .option-card:hover { border-color: var(--accent-cyan); box-shadow: 0 0 20px rgba(0,243,255,0.2); }
+    .option-card.selected { border-color: var(--accent-green); background: rgba(34, 197, 94, 0.08); box-shadow: 0 0 20px rgba(34,197,94,0.3); }
+    .option-card i { font-size: 1.5rem; color: var(--accent-cyan); transition: color 0.3s; }
+    .option-card.selected i { color: var(--accent-green); }
+    .option-title { font-family: var(--font-mono); font-weight: 700; color: #fff; font-size: 1rem; }
+    .option-desc { font-size: 0.85rem; color: var(--text-muted); transition: color 0.3s; }
+
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { display: block; font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-cyan); margin-bottom: 0.5rem; transition: color 0.3s; }
+    .form-control {
+      width: 100%; padding: 0.9rem 1rem; background: var(--bg-primary);
+      border: 1px solid var(--border-tech); border-radius: 6px; color: #fff; font-size: 1rem; font-family: var(--font-sans); transition: 0.3s;
+    }
+    .form-control:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 15px rgba(0,243,255,0.3); }
+
+    .config-actions { display: flex; justify-content: space-between; margin-top: 2rem; }
+
+    /* HUD Developer Panel (Easter Egg) */
+    #hud-panel {
+      position: fixed; bottom: 20px; right: 20px; background: rgba(2, 6, 23, 0.95);
+      border: 1px solid var(--accent-cyan); border-radius: 8px; padding: 1rem;
+      font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-cyan);
+      z-index: 99999; display: none; box-shadow: 0 0 25px rgba(0,243,255,0.3);
+      backdrop-filter: blur(10px); min-width: 220px;
+      transition: border-color 0.3s, color 0.3s;
+    }
+    #hud-panel.active { display: block; animation: hudGlitch 0.3s ease; }
+    @keyframes hudGlitch { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+    .hud-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .hud-val { color: #fff; font-weight: bold; }
+
+    /* Achievement Notification */
+    #achievement-box {
+      position: fixed; top: 100px; right: -350px; background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--accent-green); border-radius: 8px; padding: 1rem 1.5rem;
+      font-family: var(--font-mono); color: #fff; z-index: 99999; transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 25px rgba(34,197,94,0.4); display: flex; align-items: center; gap: 1rem;
+    }
+    #achievement-box.show { right: 20px; }
+    #achievement-box i { font-size: 1.8rem; color: var(--accent-green); text-shadow: 0 0 15px var(--accent-green); }
+    .ach-title { font-size: 0.75rem; color: var(--accent-green); text-transform: uppercase; letter-spacing: 1px; }
+    .ach-name { font-size: 0.95rem; font-weight: bold; }
+
+    /* Mobile Menu Fullscreen Overlay */
+    #mobile-menu {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98); backdrop-filter: blur(20px);
+      z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2rem; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+    }
+    body.matrix-theme #mobile-menu { background: rgba(2, 16, 6, 0.98); }
+    #mobile-menu.active { opacity: 1; pointer-events: auto; }
+    .mobile-nav-link { font-family: var(--font-mono); font-size: 1.8rem; font-weight: 800; color: #fff; transition: 0.3s; }
+    .mobile-nav-link:hover { color: var(--accent-cyan); text-shadow: 0 0 20px var(--accent-cyan); }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    footer { border-top: 1px solid var(--border-tech); padding: 3rem 0; background: var(--bg-primary); position: relative; z-index: 2; transition: background 0.3s, border-color 0.3s; }
+
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .mobile-menu-btn { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CUSTOM CURSOR -->
+  <div class="custom-cursor" id="cursor"></div>
+  <div class="custom-cursor-follower" id="cursor-follower"></div>
+
+  <!-- HUD DEVELOPER PANEL -->
+  <div id="hud-panel">
+    <div style="font-weight: bold; border-bottom: 1px solid var(--border-tech); padding-bottom: 4px; margin-bottom: 6px; color:#fff;"><i class="fa-solid fa-microchip"></i> SYSTEM HUD</div>
+    <div class="hud-row"><span>FPS:</span><span class="hud-val" id="hud-fps">60</span></div>
+    <div class="hud-row"><span>PARTICLES:</span><span class="hud-val" id="hud-particles">450</span></div>
+    <div class="hud-row"><span>WEBGL:</span><span class="hud-val" id="hud-webgl">ACTIVE</span></div>
+    <div class="hud-row"><span>VIEW:</span><span class="hud-val" id="hud-view">home</span></div>
+    <div class="hud-row"><span>SESSION:</span><span class="hud-val" id="hud-time">00:00</span></div>
+  </div>
+
+  <!-- ACHIEVEMENT NOTIFICATION -->
+  <div id="achievement-box">
+    <i class="fa-solid fa-trophy"></i>
+    <div>
+      <div class="ach-title">Achievement Sbloccato!</div>
+      <div class="ach-name" id="ach-text">First Contact</div>
+    </div>
+  </div>
+
+  <!-- CANVAS BACKGROUND GLOBALE -->
+  <canvas id="global-bg-canvas"></canvas>
+
+  <!-- HEADER -->
+  <header>
+    <div class="container header-inner">
+      <a href="#/it/home" class="logo" id="logo-el"><i class="fa-solid fa-microchip"></i> LUCA<span>BASSU</span></a>
+      <nav class="nav-links">
+        <a href="#/it/home" class="nav-link active" data-i18n="nav_home">Home</a>
+        <a href="#/it/services" class="nav-link" data-i18n="nav_services">Servizi</a>
+        <a href="#/it/faq" class="nav-link" data-i18n="nav_faq">FAQ</a>
+        <a href="#/it/quote" class="nav-link" data-i18n="nav_quote">Preventivo</a>
+      </nav>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <button class="sound-toggle" id="sound-toggle-btn" title="Attiva/Disattiva Suoni"><i class="fa-solid fa-volume-xmark" id="sound-icon"></i></button>
+        <div class="lang-switch">
+          <button class="lang-btn active" id="lang-it">IT</button>
+          <button class="lang-btn" id="lang-en">EN</button>
+        </div>
+        <button class="mobile-menu-btn" id="mobile-menu-toggle"><i class="fa-solid fa-bars"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE MENU FULLSCREEN -->
+  <div id="mobile-menu">
+    <a href="#/it/home" class="mobile-nav-link" data-i18n="nav_home" onclick="closeMobileMenu()">Home</a>
+    <a href="#/it/services" class="mobile-nav-link" data-i18n="nav_services" onclick="closeMobileMenu()">Servizi</a>
+    <a href="#/it/faq" class="mobile-nav-link" data-i18n="nav_faq" onclick="closeMobileMenu()">FAQ</a>
+    <a href="#/it/quote" class="mobile-nav-link" data-i18n="nav_quote" onclick="closeMobileMenu()">Preventivo</a>
+    <button class="btn-tech" onclick="closeMobileMenu()" style="margin-top: 1rem;">CHIUDI MENU</button>
+  </div>
+
+  <main id="app-root" style="flex-grow: 1;">
+
+    <!-- VISTA HOME -->
+    <section id="view-home" class="view-section active">
+      <div class="hero">
+        <div id="hero-3d-container"></div>
+        <div class="container">
+          <div class="hero-grid">
+            <div class="hero-content">
+              <div class="hero-badge"><i class="fa-solid fa-code"></i> CYBERNETIC WEB ARCHITECT // OLBIA</div>
+              <h1 class="hero-title" data-i18n="hero_title">Soluzioni Web Avanzate & <span>Cyber Coding</span>.</h1>
+              <p class="hero-desc" data-i18n="hero_desc">Progetto ecosistemi digitali ad altissime performance, interfacce WebGL immersive e architetture cloud orientate alla massima scalabilità.</p>
+              <div class="hero-actions">
+                <a href="#/it/quote" class="btn-tech" data-i18n="btn_start"><i class="fa-solid fa-paper-plane"></i> Richiedi Preventivo</a>
+              </div>
+            </div>
+
+            <!-- TERMINALE IDE INTERATTIVO -->
+            <div class="terminal-window">
+              <div class="terminal-header">
+                <div class="terminal-dots">
+                  <div class="dot dot-red"></div>
+                  <div class="dot dot-yellow"></div>
+                  <div class="dot dot-green"></div>
+                </div>
+                <div class="terminal-title">luca@web &mdash; interactive terminal</div>
+              </div>
+              <div class="terminal-body" id="term-output"><span class="code-comment" id="term-default-content">// digita 'help' o esplora i comandi disponibili</span>
+<span class="code-keyword">const</span> <span class="code-var">system</span> = {
+  <span class="code-prop">status</span>: <span class="code-str">'ONLINE'</span>,
+  <span class="code-prop">architect</span>: <span class="code-str">'Luca Bassu'</span>,
+  <span class="code-prop">location</span>: <span class="code-str">'Olbia, Italy'</span>
+};
+<span class="code-keyword">function</span> <span class="code-func">initTerminal</span>() {
+  console.log(<span class="code-str">'Pronto ai comandi...'</span>);
+}
+</div>
+              <div class="terminal-input-row">
+                <span class="terminal-prompt">&gt;</span>
+                <input type="text" class="terminal-input" id="term-input" placeholder="Digita un comando (es. help, about, skills, matrix, plasme, clear)...">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA SERVIZI -->
+    <section id="view-services" class="view-section section" style="padding-top: 140px;">
+      <div class="container">
+        <h2 class="section-title" data-i18n="nav_services">Servizi & Soluzioni</h2>
+        <div class="grid-services">
+          <div class="service-card">
+            <div class="service-icon"><i class="fa-solid fa-code"></i></div>
+            <h3 style="margin-bottom: 0.75rem; font-family: var(--font-mono); color: #fff;">Sviluppo Web Custom</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">Realizzazione di siti web e applicazioni digitali su misura, senza template preconfezionati, ottimizzate per la massima velocità.</p>
+          </div>
+          <div class="service-card">
+            <div class="service-icon"><i class="fa-solid fa-database"></i></div>
+            <h3 style="margin-bottom: 0.75rem; font-family: var(--font-mono); color: #fff;">CMS Firebase Dedicato</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">Integrazione di pannelli amministrativi privati protetti per aggiornare contenuti e preventivi in tempo reale.</p>
+          </div>
+          <div class="service-card">
+            <div class="service-icon"><i class="fa-solid fa-cube"></i></div>
+            <h3 style="margin-bottom: 0.75rem; font-family: var(--font-mono); color: #fff;">Performance & WebGL 3D</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">Aggiunta di interazioni visive avanzate, animazioni fluide e oggetti 3D interattivi per distinguere il tuo brand sul web.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA FAQ -->
+    <section id="view-faq" class="view-section section" style="padding-top: 140px;">
+      <div class="container">
+        <h2 class="section-title" data-i18n="nav_faq">Domande Frequenti</h2>
+        <div class="faq-list">
+          <div class="faq-item">
+            <div class="faq-q">01. Come avviene la consegna del progetto? <i class="fa-solid fa-chevron-down"></i></div>
+            <div class="faq-a-wrapper">
+              <div class="faq-a">Tutti i progetti sono sviluppati con codice pulito, modulare e pronto per essere ospitato su qualsiasi hosting statico sicuro (HTTPS).</div>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q">02. Posso aggiornare autonomamente i contenuti? <i class="fa-solid fa-chevron-down"></i></div>
+            <div class="faq-a-wrapper">
+              <div class="faq-a">Sì, grazie alla dashboard amministrativa integrata collegata a Cloud Firestore potrai gestire testi e contenuti senza toccare il codice.</div>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q">03. Quali tecnologie vengono utilizzate? <i class="fa-solid fa-chevron-down"></i></div>
+            <div class="faq-a-wrapper">
+              <div class="faq-a">Utilizzo esclusivamente HTML5, CSS3, JavaScript moderno (Vanilla ES6+) e Firebase, garantendo leggerezza e assenza di dipendenze pesanti.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA PREVENTIVO (CONFIGURATORE MULTI-STEP) -->
+    <section id="view-quote" class="view-section section" style="padding-top: 140px;">
+      <div class="container">
+        <h2 class="section-title" style="text-align: center; justify-content: center;" data-i18n="quote_title">Configuratore Preventivo Cloud</h2>
+        <div class="quote-box">
+          <div class="step-indicator">
+            <div class="step-dot active" id="s-dot-1">1</div>
+            <div class="step-dot" id="s-dot-2">2</div>
+            <div class="step-dot" id="s-dot-3">3</div>
+          </div>
+
+          <form id="quote-config-form">
+            <!-- STEP 1: Tipologia Progetto -->
+            <div class="config-step active" id="config-step-1">
+              <h3 style="font-family: var(--font-mono); margin-bottom: 1.5rem; color: #fff;">// Scegli la Tipologia di Progetto</h3>
+              <div class="options-grid">
+                <div class="option-card" onclick="selectOption(this, 'type', 'Sito Web Custom')">
+                  <i class="fa-solid fa-globe"></i>
+                  <div class="option-title">Sito Web Custom</div>
+                  <div class="option-desc">Portfolio o sito aziendale ad alte performance.</div>
+                </div>
+                <div class="option-card" onclick="selectOption(this, 'type', 'Web App / Dashboard')">
+                  <i class="fa-solid fa-window-maximize"></i>
+                  <div class="option-title">Web App & Dashboard</div>
+                  <div class="option-desc">Applicativo web avanzato con Firebase.</div>
+                </div>
+                <div class="option-card" onclick="selectOption(this, 'type', 'E-Commerce Pro')">
+                  <i class="fa-solid fa-cart-shopping"></i>
+                  <div class="option-title">E-Commerce Pro</div>
+                  <div class="option-desc">Negozio online sicuro e veloce.</div>
+                </div>
+                <div class="option-card" onclick="selectOption(this, 'type', 'CMS Completo')">
+                  <i class="fa-solid fa-database"></i>
+                  <div class="option-title">CMS Completo</div>
+                  <div class="option-desc">Piattaforma con pannello di amministrazione.</div>
+                </div>
+              </div>
+              <div class="config-actions" style="justify-content: flex-end;">
+                <button type="button" class="btn-tech" onclick="nextStep(2)">Avanti <i class="fa-solid fa-arrow-right"></i></button>
+              </div>
+            </div>
+
+            <!-- STEP 2: Funzionalità -->
+            <div class="config-step" id="config-step-2">
+              <h3 style="font-family: var(--font-mono); margin-bottom: 1.5rem; color: #fff;">// Seleziona Funzionalità Richieste</h3>
+              <div class="options-grid">
+                <div class="option-card" onclick="toggleMultiOption(this, 'feat', 'Multilingua i18n')">
+                  <i class="fa-solid fa-language"></i>
+                  <div class="option-title">Multilingua i18n</div>
+                  <div class="option-desc">Supporto italiano e inglese nativo.</div>
+                </div>
+                <div class="option-card" onclick="toggleMultiOption(this, 'feat', 'WebGL & 3D')">
+                  <i class="fa-solid fa-cube"></i>
+                  <div class="option-title">WebGL & 3D</div>
+                  <div class="option-desc">Esperienze visive tridimensionali.</div>
+                </div>
+                <div class="option-card" onclick="toggleMultiOption(this, 'feat', 'CMS Firebase')">
+                  <i class="fa-solid fa-cloud"></i>
+                  <div class="option-title">CMS Firebase</div>
+                  <div class="option-desc">Gestione contenuti in tempo reale.</div>
+                </div>
+                <div class="option-card" onclick="toggleMultiOption(this, 'feat', 'Animazioni Avanzate')">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <div class="option-title">Animazioni Avanzate</div>
+                  <div class="option-desc">Microinterazioni e transizioni fluidissime.</div>
+                </div>
+              </div>
+              <div class="config-actions">
+                <button type="button" class="btn-tech" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Indietro</button>
+                <button type="button" class="btn-tech" onclick="nextStep(3)">Avanti <i class="fa-solid fa-arrow-right"></i></button>
+              </div>
+            </div>
+
+            <!-- STEP 3: Contatti & Invio -->
+            <div class="config-step" id="config-step-3">
+              <h3 style="font-family: var(--font-mono); margin-bottom: 1.5rem; color: #fff;">// Informazioni di Contatto</h3>
+              <div class="form-group">
+                <label class="form-label" data-i18n="q_name">Nome e Cognome *</label>
+                <input type="text" class="form-control" id="q-name" required placeholder="es. Mario Rossi">
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="q_email">Email di Contatto *</label>
+                <input type="email" class="form-control" id="q-email" required placeholder="mario@azienda.it">
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="q_notes">Descrizione e Obiettivi</label>
+                <textarea class="form-control" id="q-notes" rows="3" placeholder="Dettagli tecnici e funzionalità richieste..."></textarea>
+              </div>
+              <div class="config-actions">
+                <button type="button" class="btn-tech" onclick="nextStep(2)"><i class="fa-solid fa-arrow-left"></i> Indietro</button>
+                <button type="submit" class="btn-tech" data-i18n="q_submit"><i class="fa-solid fa-paper-plane"></i> Invia a Firestore</button>
+              </div>
+              <div id="quote-feedback" style="margin-top: 1rem; font-family: var(--font-mono); font-size: 0.9rem; text-align: center;"></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+
+  <footer>
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
+      <div>&copy; 2026 LUCA BASSU. SECURE CLOUD ARCHITECTURE.</div>
+      <div>NODE: OLB_SARDINIA_ITALY</div>
+    </div>
+  </footer>
+
+  <!-- THREE.JS CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- FIREBASE SDK v13 & LOGICA APPLICATIVA -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwJBsvhgrKI1_H2a0jFHcPaRCrqh-iTDo",
+      authDomain: "lucabassu-4cc1c.firebaseapp.com",
+      projectId: "lucabassu-4cc1c",
+      storageBucket: "lucabassu-4cc1c.firebasestorage.app",
+      messagingSenderId: "984731505040",
+      appId: "1:984731505040:web:e457747352bdaeeb86e315",
+      measurementId: "G-790J4K5QYW"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentLang = 'it';
+    let soundEnabled = false;
+    let achievements = JSON.parse(localStorage.getItem('luca_achievements') || '[]');
+    let sessionSeconds = 0;
+    let selectedProjectType = 'Sito Web Custom';
+    let selectedFeatures = [];
+
+    setInterval(() => { sessionSeconds++; updateHUDTime(); }, 1000);
+
+    function unlockAchievement(name) {
+      if (!achievements.includes(name)) {
+        achievements.push(name);
+        localStorage.setItem('luca_achievements', JSON.stringify(achievements));
+        showAchievementModal(name);
+        playSound('ach');
+      }
+    }
+
+    function showAchievementModal(name) {
+      const box = document.getElementById('achievement-box');
+      document.getElementById('ach-text').textContent = name;
+      box.classList.add('show');
+      setTimeout(() => box.classList.remove('show'), 4000);
+    }
+
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (type === 'click') {
+          osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+        } else if (type === 'ach') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }
+      } catch(e) {}
+    }
+
+    document.getElementById('sound-toggle-btn').addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      icon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+      if (soundEnabled) playSound('click');
+    });
+
+    const cursor = document.getElementById('cursor');
+    const follower = document.getElementById('cursor-follower');
+    let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0, followerX = 0, followerY = 0;
+    let normalizedMouseX = 0, normalizedMouseY = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX; 
+      mouseY = e.clientY;
+      normalizedMouseX = (e.clientX / window.innerWidth - 0.5) * 12;
+      normalizedMouseY = -(e.clientY / window.innerHeight - 0.5) * 12;
+    });
+
+    function cursorLoop() {
+      cursorX += (mouseX - cursorX) * 0.2;
+      cursorY += (mouseY - cursorY) * 0.2;
+      followerX += (mouseX - followerX) * 0.15;
+      followerY += (mouseY - followerY) * 0.15;
+      cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+      follower.style.transform = `translate(${followerX}px, ${followerY}px) translate(-50%, -50%)`;
+      requestAnimationFrame(cursorLoop);
+    }
+    cursorLoop();
+
+    document.querySelectorAll('a, button, .service-card, .option-card').forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+    });
+
+    const translations = {
+      it: {
+        nav_home: "Home", nav_services: "Servizi", nav_faq: "FAQ", nav_quote: "Preventivo",
+        hero_title: "Soluzioni Web Avanzate & <span>Cyber Coding</span>.",
+        hero_desc: "Progetto ecosistemi digitali ad altissime performance, interfacce WebGL immersive e architetture cloud orientate alla massima scalabilità.",
+        btn_start: "Richiedi Preventivo", loading: "Sincronizzazione dati da Cloud Firestore...",
+        quote_title: "Configuratore Preventivo Cloud",
+        q_name: "Nome e Cognome *", q_email: "Email di Contatto *",
+        q_notes: "Descrizione e Obiettivi", q_submit: "Invia a Firestore"
+      },
+      en: {
+        nav_home: "Home", nav_services: "Services", nav_faq: "FAQ", nav_quote: "Get Quote",
+        hero_title: "Advanced Web Solutions & <span>Cyber Coding</span>.",
+        hero_desc: "I design high-performance digital ecosystems, immersive WebGL interfaces and cloud architectures oriented towards maximum scalability.",
+        btn_start: "Request Quote", loading: "Syncing data from Cloud Firestore...",
+        quote_title: "Cloud Quote Configurator",
+        q_name: "Full Name *", q_email: "Email Address *",
+        q_notes: "Description & Objectives", q_submit: "Send to Firestore"
+      }
+    };
+
+    function updateLanguage(lang) {
+      currentLang = lang;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.innerHTML = translations[lang][key];
+        }
+      });
+      document.getElementById('lang-it').classList.toggle('active', lang === 'it');
+      document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+    }
+
+    function handleRouting() {
+      const hash = window.location.hash || '#/it/home';
+      const parts = hash.replace('#/', '').split('/');
+      const lang = parts[0] || 'it';
+      const route = parts[1] || 'home';
+
+      if (lang === 'it' || lang === 'en') updateLanguage(lang);
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+      const target = document.getElementById(`view-${route}`);
+      if (target) target.classList.add('active');
+      else document.getElementById('view-home').classList.add('active');
+      window.scrollTo(0,0);
+      document.getElementById('hud-view').textContent = route;
+      unlockAchievement('Code Explorer');
+    }
+
+    window.addEventListener('hashchange', handleRouting);
+
+    const mobileMenu = document.getElementById('mobile-menu');
+    document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+      mobileMenu.classList.toggle('active');
+      playSound('click');
+    });
+    window.closeMobileMenu = function() {
+      mobileMenu.classList.remove('active');
+      playSound('click');
+    };
+
+    document.querySelectorAll('.faq-q').forEach(q => {
+      q.addEventListener('click', () => {
+        const item = q.parentElement;
+        item.classList.toggle('active');
+        playSound('click');
+      });
+    });
+
+    window.nextStep = function(step) {
+      document.querySelectorAll('.config-step').forEach(s => s.classList.remove('active'));
+      document.getElementById(`config-step-${step}`).classList.add('active');
+      document.querySelectorAll('.step-dot').forEach((d, idx) => {
+        d.classList.remove('active', 'completed');
+        if (idx + 1 < step) d.classList.add('completed');
+        else if (idx + 1 === step) d.classList.add('active');
+      });
+      playSound('click');
+    };
+
+    window.selectOption = function(card, group, val) {
+      card.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedProjectType = val;
+      playSound('click');
+    };
+
+    window.toggleMultiOption = function(card, group, val) {
+      card.classList.toggle('selected');
+      if (selectedFeatures.includes(val)) {
+        selectedFeatures = selectedFeatures.filter(v => v !== val);
+      } else {
+        selectedFeatures.push(val);
+      }
+      playSound('click');
+    };
+
+    document.getElementById('quote-config-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fb = document.getElementById('quote-feedback');
+      fb.style.color = 'var(--accent-cyan)';
+      fb.textContent = 'Trasmissione sicura su Cloud Firestore in corso...';
+      playSound('click');
+      try {
+        await addDoc(collection(db, "quoteRequests"), {
+          projectType: selectedProjectType,
+          features: selectedFeatures,
+          clientName: document.getElementById('q-name').value,
+          clientEmail: document.getElementById('q-email').value,
+          notes: document.getElementById('q-notes').value,
+          createdAt: serverTimestamp(),
+          status: 'pending'
+        });
+        fb.style.color = '#10b981';
+        fb.textContent = 'Richiesta trasmessa con successo su Firestore!';
+        unlockAchievement('First Contact');
+        playSound('ach');
+        document.getElementById('quote-config-form').reset();
+      } catch(err) {
+        fb.style.color = '#ef4444';
+        fb.textContent = 'Errore di trasmissione. Verifica le regole Firestore.';
+      }
+    });
+
+    const termInput = document.getElementById('term-input');
+    const termOutput = document.getElementById('term-output');
+    
+    // Contenuto iniziale nativo da preservare durante il comando clear/cls
+    const initialTerminalHtml = termOutput.innerHTML;
+
+    let konamiKeys = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let konamiIndex = 0;
+    window.addEventListener('keydown', (e) => {
+      if (e.key === konamiKeys[konamiIndex]) {
+        konamiIndex++;
+        if (konamiIndex === konamiKeys.length) {
+          triggerSystemOverride();
+          konamiIndex = 0;
+        }
+      } else {
+        konamiIndex = 0;
+      }
+    });
+
+    let logoClicks = 0;
+    document.getElementById('logo-el').addEventListener('click', (e) => {
+      logoClicks++;
+      if (logoClicks === 5) {
+        appendTermLine('// HACKER TERMINAL SBLOCCATO DAL LOGO');
+        unlockAchievement('Matrix Unlocked');
+        logoClicks = 0;
+      }
+    });
+
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = termInput.value.trim().toLowerCase();
+        appendTermLine(`> ${termInput.value}`);
+        handleTerminalCommand(cmd);
+        termInput.value = '';
+        playSound('click');
+      }
+    });
+
+    function appendTermLine(text) {
+      termOutput.innerHTML += `\n${text}`;
+      termOutput.scrollTop = termOutput.scrollHeight;
+    }
+
+    let isDiamondShape = false;
+    let switchGeometryCallback = null;
+    let toggleMatrixParticlesCallback = null;
+    let matrixActive = false;
+
+    function handleTerminalCommand(cmd) {
+      switch(cmd) {
+        case 'help':
+          appendTermLine('Comandi disponibili: help, about, skills, matrix, plasme, hud, clear, exit');
+          break;
+        case 'about':
+          appendTermLine('Luca Bassu — Senior Frontend Developer, WebGL & Cloud Architect.');
+          break;
+        case 'skills':
+          appendTermLine('Stack: HTML5, CSS3, JavaScript ES6+, Three.js, Firebase, Cloud Architecture.');
+          break;
+        case 'matrix':
+          matrixActive = !matrixActive;
+          document.body.classList.toggle('matrix-theme', matrixActive);
+          if (toggleMatrixParticlesCallback) toggleMatrixParticlesCallback(matrixActive);
+          if (matrixActive) {
+            appendTermLine('>> Modalità Matrix attivata: tema cromatico verde e pioggia digitale.');
+            unlockAchievement('Matrix Unlocked');
+          } else {
+            appendTermLine('>> Modalità Matrix disattivata: ripristinati tema e particelle standard.');
+          }
+          break;
+        case 'plasme':
+          isDiamondShape = !isDiamondShape;
+          if (switchGeometryCallback) switchGeometryCallback(isDiamondShape);
+          if (isDiamondShape) {
+            appendTermLine('>> Comando PLASME eseguito: l\'oggetto si è trasformato in un rombo astratto e fluttuante.');
+            unlockAchievement('Plasma Shift');
+          } else {
+            appendTermLine('>> Comando PLASME ripristinato: l\'oggetto è tornato alla forma originale.');
+          }
+          break;
+        case 'hud':
+          document.getElementById('hud-panel').classList.toggle('active');
+          appendTermLine('>> Pannello HUD toggled.');
+          break;
+        case 'clear':
+        case 'cls':
+          termOutput.innerHTML = initialTerminalHtml;
+          break;
+        case 'exit':
+          appendTermLine('Terminal locked.');
+          break;
+        default:
+          appendTermLine(`Comando sconosciuto: '${cmd}'. Digita 'help' per la lista.`);
+      }
+    }
+
+    function triggerSystemOverride() {
+      document.documentElement.style.setProperty('--accent-cyan', '#a855f7');
+      document.documentElement.style.setProperty('--accent-blue', '#ec4899');
+      unlockAchievement('System Override');
+      appendTermLine('>>> SYSTEM OVERRIDE ATTIVATO! Palette cromatica modificata.');
+    }
+
+    function updateHUDTime() {
+      const m = String(Math.floor(sessionSeconds / 60)).padStart(2, '0');
+      const s = String(sessionSeconds % 60).padStart(2, '0');
+      document.getElementById('hud-time').textContent = `${m}:${s}`;
+    }
+
+    document.getElementById('lang-it').addEventListener('click', () => { window.location.hash = '#/it/home'; });
+    document.getElementById('lang-en').addEventListener('click', () => { window.location.hash = '#/en/home'; });
+
+    // GLOBAL 3D BACKGROUND & FLUID ABSTRACT OBJECT ENGINE
+    function initGlobalEngine() {
+      const canvas = document.getElementById('global-bg-canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 10;
+
+      function createMatrixLetterTexture(letter) {
+        const canvasTex = document.createElement('canvas');
+        canvasTex.width = 64;
+        canvasTex.height = 64;
+        const ctx = canvasTex.getContext('2d');
+        ctx.font = 'bold 48px monospace';
+        ctx.fillStyle = '#22c55e';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.clearRect(0, 0, 64, 64);
+        ctx.fillText(letter, 32, 32);
+        return new THREE.CanvasTexture(canvasTex);
+      }
+
+      const matrixChars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&<>*+-/\\';
+      const particleCount = 450;
+      const geom = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const originalPositions = new Float32Array(particleCount * 3);
+      const velocities = [];
+
+      for(let i=0; i<particleCount*3; i+=3) {
+        const px = (Math.random() - 0.5) * 28;
+        const py = (Math.random() - 0.5) * 28;
+        const pz = (Math.random() - 0.5) * 28;
+        positions[i] = px;
+        positions[i+1] = py;
+        positions[i+2] = pz;
+        originalPositions[i] = px;
+        originalPositions[i+1] = py;
+        originalPositions[i+2] = pz;
+        velocities.push({
+          x: (Math.random() - 0.5) * 0.006,
+          y: (Math.random() - 0.5) * 0.006,
+          z: (Math.random() - 0.5) * 0.006
+        });
+      }
+      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      const pMaterialStandard = new THREE.PointsMaterial({
+        color: 0x00f3ff,
+        size: 0.065,
+        transparent: true,
+        opacity: 0.35
+      });
+
+      const randomChar = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+      const pMaterialMatrix = new THREE.PointsMaterial({
+        color: 0x22c55e,
+        size: 0.3,
+        map: createMatrixLetterTexture(randomChar),
+        transparent: true,
+        opacity: 0.75,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+
+      let particleSystem = new THREE.Points(geom, pMaterialStandard);
+      scene.add(particleSystem);
+
+      toggleMatrixParticlesCallback = (enable) => {
+        scene.remove(particleSystem);
+        if (enable) {
+          particleSystem = new THREE.Points(geom, pMaterialMatrix);
+        } else {
+          particleSystem = new THREE.Points(geom, pMaterialStandard);
+        }
+        scene.add(particleSystem);
+      };
+
+      // Hero Fluid Abstract Object Engine
+      const container3D = document.getElementById('hero-3d-container');
+      const heroScene = new THREE.Scene();
+      const heroCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      heroCamera.position.z = 6;
+      const heroRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      heroRenderer.setSize(window.innerWidth, window.innerHeight);
+      heroRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container3D.appendChild(heroRenderer.domElement);
+
+      const fluidGeo = new THREE.IcosahedronGeometry(2.0, 32);
+      const diamondGeo = new THREE.OctahedronGeometry(2.1, 4);
+
+      let currentGeo = fluidGeo;
+      let initialPositions = currentGeo.attributes.position.clone();
+
+      const fluidMat = new THREE.MeshBasicMaterial({
+        color: 0x00f3ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.22
+      });
+      const fluidMesh = new THREE.Mesh(currentGeo, fluidMat);
+      heroScene.add(fluidMesh);
+
+      switchGeometryCallback = (toDiamond) => {
+        heroScene.remove(fluidMesh);
+        currentGeo.dispose();
+        
+        currentGeo = toDiamond ? diamondGeo : fluidGeo;
+        initialPositions = currentGeo.attributes.position.clone();
+        
+        fluidMesh.geometry = currentGeo;
+        heroScene.add(fluidMesh);
+      };
+
+      let mouseX3D = 0, mouseY3D = 0;
+      window.addEventListener('mousemove', (e) => {
+        mouseX3D = (e.clientX / window.innerWidth - 0.5) * 0.8;
+        mouseY3D = (e.clientY / window.innerHeight - 0.5) * 0.8;
+      });
+
+      let clock = new THREE.Clock();
+      let fpsFrames = 0, lastFpsCheck = performance.now();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const time = clock.getElapsedTime() * 0.45;
+
+        fpsFrames++;
+        let now = performance.now();
+        if (now - lastFpsCheck >= 1000) {
+          document.getElementById('hud-fps').textContent = fpsFrames;
+          fpsFrames = 0;
+          lastFpsCheck = now;
+        }
+
+        const posAttr = currentGeo.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+          const initX = initialPositions.getX(i);
+          const initY = initialPositions.getY(i);
+          const initZ = initialPositions.getZ(i);
+
+          const waveFactor = isDiamondShape ? 0.28 : 0.35;
+          const wave = Math.sin(time * 1.5 + initX * 1.2) * Math.cos(time * 1.1 + initY * 1.2) * Math.sin(time * 0.9 + initZ * 1.2) * waveFactor;
+          const lengthScale = 1.0 + wave;
+
+          posAttr.setXYZ(i, initX * lengthScale, initY * lengthScale, initZ * lengthScale);
+        }
+        posAttr.needsUpdate = true;
+
+        if (isDiamondShape) {
+          fluidMesh.position.x = Math.sin(time * 0.8) * 0.5;
+          fluidMesh.position.y = Math.cos(time * 0.6) * 0.4;
+          fluidMesh.position.z = Math.sin(time * 0.5) * 0.3;
+        } else {
+          fluidMesh.position.set(0, 0, 0);
+        }
+
+        if (!matrixActive) {
+          const colorCycle = (Math.sin(time * 0.3) + 1) * 0.5;
+          if (colorCycle < 0.5) {
+            fluidMat.color.setHSL(0.52 + colorCycle * 0.08, 0.9, 0.55);
+          } else {
+            fluidMat.color.setHSL(0.62 + (colorCycle - 0.5) * 0.2, 0.8, 0.6);
+          }
+        } else {
+          fluidMat.color.setHex(0x22c55e);
+        }
+
+        fluidMesh.rotation.y = time * 0.1;
+        fluidMesh.rotation.x = time * 0.07;
+
+        fluidMesh.rotation.x += (mouseY3D - fluidMesh.rotation.x) * 0.03;
+        fluidMesh.rotation.y += (mouseX3D - fluidMesh.rotation.y) * 0.03;
+
+        const posArr = geom.attributes.position.array;
+        for(let i=0; i<particleCount*3; i+=3) {
+          if (matrixActive) {
+            posArr[i+1] -= 0.015;
+            if (posArr[i+1] < -14) posArr[i+1] = 14;
+          } else {
+            posArr[i] += velocities[i/3].x;
+            posArr[i+1] += velocities[i/3].y;
+            posArr[i+2] += velocities[i/3].z;
+
+            const targetX = originalPositions[i] + normalizedMouseX * 0.4;
+            const targetY = originalPositions[i+1] + normalizedMouseY * 0.4;
+
+            posArr[i] += (targetX - posArr[i]) * 0.02;
+            posArr[i+1] += (targetY - posArr[i+1]) * 0.02;
+
+            if (posArr[i] > 15) posArr[i] = -15;
+            if (posArr[i] < -15) posArr[i] = 15;
+            if (posArr[i+1] > 15) posArr[i+1] = -15;
+            if (posArr[i+1] < -15) posArr[i+1] = 15;
+          }
+        }
+        geom.attributes.position.needsUpdate = true;
+        particleSystem.rotation.y = time * 0.02;
+
+        renderer.render(scene, camera);
+        heroRenderer.render(heroScene, heroCamera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        heroCamera.aspect = window.innerWidth / window.innerHeight;
+        heroCamera.updateProjectionMatrix();
+        heroRenderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      handleRouting();
+      initGlobalEngine();
+      unlockAchievement('First Contact');
+    });
+  </script>
+</body>
+</html>
