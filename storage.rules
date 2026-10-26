@@ -1,10 +1,37 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Storage uploads are not used by this site. Deny access unless a future
-    // explicitly reviewed requirement changes this policy.
-    match /{allPaths=**} {
-      allow read, write: if false;
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.active == true;
     }
+    function ownsChat(chatId) {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/chats/$(chatId))
+        && firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participantUid == request.auth.uid;
+    }
+    match /chats/{chatId}/{uid}/{fileName} {
+      allow read: if isAdmin() || (signedIn() && uid == request.auth.uid && ownsChat(chatId));
+      allow create, update: if (isAdmin() || (signedIn() && uid == request.auth.uid && ownsChat(chatId)))
+        && request.resource.size <= 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*')
+          || request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'text/plain'
+          || request.resource.contentType == 'application/msword'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          || request.resource.contentType == 'application/zip'
+          || request.resource.contentType == 'application/x-zip-compressed');
+      allow delete: if isAdmin() || (signedIn() && uid == request.auth.uid && ownsChat(chatId));
+    }
+    match /project-covers/{projectId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.size <= 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+      allow delete: if isAdmin();
+    }
+    match /{allPaths=**} { allow read, write: if false; }
   }
 }

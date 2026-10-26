@@ -1,0 +1,13 @@
+{
+  "name": "studio-portfolio-premium",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "python3 -m http.server 8080",
+    "firebase:deploy": "firebase deploy --only hosting,firestore:rules"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.0.0"
+  }
+}

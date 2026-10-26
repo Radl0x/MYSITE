@@ -1,0 +1,8 @@
+# File locali e segreti
+.env
+.env.*
+service-account*.json
+*-service-account*.json
+firebase-adminsdk-*.json
+node_modules/
+.DS_Store

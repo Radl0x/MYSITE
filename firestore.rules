@@ -1,76 +1,171 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function signedIn() {
       return request.auth != null;
     }
 
+    // Un admin è un utente Firebase Authentication con documento:
+    // admins/{UID_UTENTE} -> { active: true }
+    // Il documento deve essere creato manualmente dalla Console Firebase
+    // usando l'UID dell'utente Auth. Le regole impediscono ai client di modificarlo.
     function isAdmin() {
       return signedIn()
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
     }
 
-    // The allowlist can be read only by the account whose UID is the document ID.
-    // Clients cannot add or modify administrator records.
-    match /admins/{uid} {
-      allow get: if signedIn() && request.auth.uid == uid;
-      allow list, create, update, delete: if false;
-    }
-
-    // Public portfolio: visitors may read published projects only.
-    // Admins can manage drafts and published projects.
-    match /projects/{projectId} {
-      allow read: if isAdmin() || resource.data.status == 'published';
-      allow create, update, delete: if isAdmin();
-    }
-
-    // The public site reads only the main public settings document.
-    match /siteSettings/{settingsId} {
-      allow read: if isAdmin() || settingsId == 'main';
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Public visitors may submit requests but cannot read or change submissions.
-    match /quoteRequests/{requestId} {
-      allow create: if request.resource.data.keys().hasOnly([
-          'projectType', 'features', 'budget', 'timeline', 'name', 'email',
-          'company', 'phone', 'message', 'createdAt', 'status'
+    function validPublicRequest() {
+      return request.resource.data.keys().hasAll([
+          'requestType', 'name', 'email', 'message',
+          'privacyConsent', 'source', 'status', 'createdAt'
         ])
-        && request.resource.data.keys().hasAll([
-          'projectType', 'features', 'budget', 'timeline', 'name', 'email',
-          'company', 'phone', 'message', 'createdAt', 'status'
+        && request.resource.data.keys().hasOnly([
+          'requestType', 'name', 'email', 'message', 'privacyConsent',
+          'source', 'status', 'createdAt', 'company', 'projectType',
+          'requestedDate'
         ])
-        && request.resource.data.projectType is string
-        && request.resource.data.projectType.size() <= 120
-        && request.resource.data.features is list
-        && request.resource.data.features.size() <= 40
-        && request.resource.data.budget is string
-        && request.resource.data.budget.size() <= 120
-        && request.resource.data.timeline is string
-        && request.resource.data.timeline.size() <= 120
+        && request.resource.data.requestType in ['contact', 'quote', 'appointment']
         && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 120
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 100
         && request.resource.data.email is string
-        && request.resource.data.email.size() > 3
+        && request.resource.data.email.size() >= 5
         && request.resource.data.email.size() <= 254
-        && request.resource.data.company is string
-        && request.resource.data.company.size() <= 160
-        && request.resource.data.phone is string
-        && request.resource.data.phone.size() <= 50
         && request.resource.data.message is string
-        && request.resource.data.message.size() <= 10000
+        && request.resource.data.message.size() >= 10
+        && request.resource.data.message.size() <= 5000
+        && request.resource.data.privacyConsent == true
+        && request.resource.data.source == 'public-website'
         && request.resource.data.status == 'new'
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt == request.time
+        && (!('company' in request.resource.data)
+          || (request.resource.data.company is string && request.resource.data.company.size() <= 120))
+        && (!('projectType' in request.resource.data)
+          || (request.resource.data.projectType is string && request.resource.data.projectType.size() <= 120))
+        && (request.resource.data.requestType != 'appointment'
+          || ('requestedDate' in request.resource.data
+            && request.resource.data.requestedDate is string
+            && request.resource.data.requestedDate.size() >= 8
+            && request.resource.data.requestedDate.size() <= 40));
+    }
+
+    // Ruolo admin non modificabile dal client.
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update, delete: if false;
+    }
+
+    // Contenuti pubblici: leggibili se visibili, CRUD solo admin.
+    match /projects/{documentId} {
+      allow read: if isAdmin() || resource.data.visible == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /services/{documentId} {
+      allow read: if isAdmin() || resource.data.visible == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /skills/{documentId} {
+      allow read: if isAdmin() || resource.data.visible == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Impostazioni sito leggibili pubblicamente; modificabili solo da admin.
+    match /site/settings {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Eventuali altri documenti in /site sono privati.
+    match /site/{documentId} {
+      allow read, write: if isAdmin();
+    }
+
+    // I visitatori possono inviare richieste conformi allo schema.
+    // Solo gli admin possono leggere, aggiornare lo stato o eliminare.
+    match /requests/{requestId} {
+      allow create: if validPublicRequest();
       allow read, update, delete: if isAdmin();
     }
 
-    match /trash/{trashId} {
-      allow read, create, update, delete: if isAdmin();
+    // Live chat. I visitatori usano Anonymous Authentication: il loro UID
+    // identifica la conversazione e impedisce l'accesso alle chat altrui.
+    function ownsChat(chatId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/chats/$(chatId))
+        && get(/databases/$(database)/documents/chats/$(chatId)).data.participantUid == request.auth.uid;
     }
 
-    // Deny all other collections by default.
+    function validChatStart() {
+      return signedIn()
+        && request.resource.data.keys().hasOnly(['name','email','participantUid','status','createdAt','lastMessage','lastMessageAt'])
+        && request.resource.data.keys().hasAll(['name','email','participantUid','status','createdAt','lastMessage','lastMessageAt'])
+        && request.resource.data.participantUid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() >= 5
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.status == 'open'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.lastMessageAt == request.time
+        && request.resource.data.lastMessage is string
+        && request.resource.data.lastMessage.size() <= 180;
+    }
+
+    function validChatMessage(chatId) {
+      return signedIn()
+        && request.resource.data.keys().hasOnly(['text','senderRole','senderUid','senderName','createdAt','attachment'])
+        && request.resource.data.keys().hasAll(['text','senderRole','senderUid','senderName','createdAt'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 2000
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.senderName is string
+        && request.resource.data.senderName.size() <= 254
+        && request.resource.data.createdAt == request.time
+        && (!('attachment' in request.resource.data) || (request.resource.data.attachment is map
+          && request.resource.data.attachment.keys().hasOnly(['name','size','type','path','url','id','storage'])
+          && request.resource.data.attachment.name is string
+          && request.resource.data.attachment.name.size() >= 1
+          && request.resource.data.attachment.name.size() <= 255
+          && request.resource.data.attachment.size is number
+          && request.resource.data.attachment.size > 0
+          && request.resource.data.attachment.size <= 5242880
+          && request.resource.data.attachment.type is string
+          && ((request.resource.data.attachment.storage == 'local-only'
+              && request.resource.data.attachment.id is string
+              && request.resource.data.attachment.id.size() <= 100)
+            || (request.resource.data.attachment.path is string
+              && request.resource.data.attachment.url is string))))
+        && ((isAdmin() && request.resource.data.senderRole == 'admin')
+          || (ownsChat(chatId) && request.resource.data.senderRole == 'visitor'));
+    }
+
+    match /chats/{chatId} {
+      allow create: if validChatStart();
+      allow read: if isAdmin() || (signedIn() && resource.data.participantUid == request.auth.uid);
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.participantUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage','lastMessageAt'])
+          && request.resource.data.lastMessage is string
+          && request.resource.data.lastMessage.size() <= 180
+          && request.resource.data.lastMessageAt == request.time);
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() || ownsChat(chatId);
+        allow create: if validChatMessage(chatId);
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // Default deny: ogni altra collezione è chiusa.
     match /{document=**} {
       allow read, write: if false;
     }
