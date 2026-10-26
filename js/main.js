@@ -249,6 +249,22 @@ function revealHeroTitle() {
   $(".hero h1.cms-title-pending")?.classList.remove("cms-title-pending");
 }
 
+function renderMethodTitle(settings = {}) {
+  // Titolo Metodo gestito esclusivamente dalle impostazioni CMS, senza testo editoriale nell'HTML.
+  const defaults = { methodTitleLine1: "Un’idea prende", methodTitleLine2: "forma, passo dopo passo.", methodTitleColor1: "#f3f4f6", methodTitleColor2: "#b8ff65" };
+  const values = {};
+  for (const key of Object.keys(defaults)) values[key] = typeof settings[key] === "string" && settings[key].trim() ? settings[key].trim() : defaults[key];
+  const first = document.querySelector('[data-method-title="line1"]');
+  const second = document.querySelector('[data-method-title="line2"]');
+  if (first) { first.textContent = values.methodTitleLine1; first.style.color = /^#[0-9a-fA-F]{6}$/.test(values.methodTitleColor1) ? values.methodTitleColor1 : defaults.methodTitleColor1; }
+  if (second) { second.textContent = values.methodTitleLine2; second.style.color = /^#[0-9a-fA-F]{6}$/.test(values.methodTitleColor2) ? values.methodTitleColor2 : defaults.methodTitleColor2; }
+  const heading = document.querySelector(".cms-method-title-pending, #process #methodTitle");
+  if (heading) {
+    heading.setAttribute("aria-label", `${values.methodTitleLine1} ${values.methodTitleLine2}`.trim());
+    heading.classList.remove("cms-method-title-pending");
+  }
+}
+
 function renderProjectsTitle(settings = {}) {
   // Il titolo della sezione Progetti proviene esclusivamente dal CMS: nessun testo di fallback statico.
   const line1 = typeof settings.projectsTitleLine1 === "string" ? settings.projectsTitleLine1.trim() : "";
@@ -297,6 +313,7 @@ async function loadPublicContent() {
     if (settingsSnap.exists()) {
       const settings = settingsSnap.data();
       renderHeroTitle(settings);
+      renderMethodTitle(settings);
       renderHomeStats(settings);
       renderProjectsTitle(settings);
       // Applica subito gli override statici: non dipendono dal caricamento di progetti/servizi.
@@ -395,10 +412,28 @@ async function loadPublicContent() {
         const label = document.createElement("span"); label.textContent = `${String(d.order || 1).padStart(2,"0")} / ${d.kicker || "SERVIZIO"}`;
         const title = document.createElement("h3"); title.textContent = d.title || "Servizio";
         const desc = document.createElement("p"); desc.textContent = d.description || "";
-        const price = document.createElement("div"); price.className = "service-price"; price.textContent = d.price || "Su preventivo";
         const meta = document.createElement("small"); meta.textContent = d.tags || "SU MISURA";
         const link = document.createElement("a"); link.className = "service-link"; link.href = "#contact"; link.textContent = "Parliamone ↗"; link.addEventListener("click", () => { const input = $("#projectType"); if (input) input.value = d.title || "Altro"; });
-        card.append(label,title,desc,price,meta,link); grid.append(card);
+        const icon = document.createElement("span"); icon.className = "service-card-mark"; icon.setAttribute("aria-hidden", "true");
+        const iconKey = `${d.kicker || ""} ${d.title || ""} ${d.tags || ""}`.toLowerCase();
+        const iconPaths = iconKey.includes("consul") || iconKey.includes("ux") ? '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/><path d="m15 5 4 4"/>'
+          : iconKey.includes("cms") || iconKey.includes("firebase") || iconKey.includes("app") || iconKey.includes("booking") || iconKey.includes("sistem") ? '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h5M13 8h4M13 12h4M13 16h3"/>'
+          : iconKey.includes("portfolio") || iconKey.includes("dinamic") || iconKey.includes("esperienza") ? '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 9v11M12 13h5M12 16h4"/>'
+          : '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 9v11M12 13h5"/><path d="m15 2 2 2 4-1"/>';
+        icon.innerHTML = `<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">${iconPaths}</svg>`;
+        const signal = document.createElement("div"); signal.className = "service-card-signal"; signal.setAttribute("aria-hidden", "true");
+        const signalDot = document.createElement("i"); signal.append(signalDot, document.createTextNode("Approccio su misura"));
+        card.append(label,icon,title,desc,meta,signal,link); grid.append(card);
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          card.addEventListener("pointermove", event => {
+            const r = card.getBoundingClientRect();
+            const px = (event.clientX - r.left) / r.width - .5;
+            const py = (event.clientY - r.top) / r.height - .5;
+            card.style.setProperty("--service-tilt-x", `${(-py * 2.2).toFixed(2)}deg`);
+            card.style.setProperty("--service-tilt-y", `${(px * 2.8).toFixed(2)}deg`);
+          });
+          card.addEventListener("pointerleave", () => { card.style.setProperty("--service-tilt-x", "0deg"); card.style.setProperty("--service-tilt-y", "0deg"); });
+        }
       });
     }
     // Riapplica gli override dopo il rendering dinamico di progetti e servizi.
@@ -447,6 +482,7 @@ async function loadPublicContent() {
     }, error => console.warn("Sincronizzazione CMS in tempo reale non disponibile:", error?.code || error));
   } catch (err) {
     revealHeroTitle();
+    renderMethodTitle();
     renderProjectsTitle();
     const grid = document.querySelector("#projectsGrid");
     if (grid) { grid.replaceChildren(); grid.classList.remove("projects-loading"); grid.setAttribute("aria-busy", "false"); const message=document.createElement("p"); message.className="projects-empty-state"; message.textContent="Progetti temporaneamente non disponibili."; grid.append(message); }

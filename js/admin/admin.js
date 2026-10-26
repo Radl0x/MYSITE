@@ -2,7 +2,7 @@ import { auth, db } from "../firebase.js";
 import { saveLocalAttachment, getLocalAttachmentUrl } from "../local-attachments.js";
 import { saveLocalProjectCover, getLocalProjectCoverUrl } from "../local-project-covers.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
-import { collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+import { collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -22,7 +22,7 @@ const configs = {
     ["visible","Pubblica sul sito","checkbox",false,"Attiva per rendere visibile il progetto."]
   ]},
   services: { label: "servizio", fields: [
-    ["title","Titolo","text",true],["kicker","Etichetta breve","text",true],["description","Descrizione","textarea",true],["price","Prezzo / fascia indicativa","text",true],["tags","Tecnologie / tag","text",true],["order","Ordine","number",true],["visible","Visibile sul sito","checkbox",false]
+    ["title","Titolo","text",true],["kicker","Etichetta breve","text",true],["description","Descrizione","textarea",true],["tags","Competenze / ambiti","text",true],["order","Ordine","number",true],["visible","Visibile sul sito","checkbox",false]
   ]},
   skills: { label: "competenza", fields: [
     ["title","Nome competenza","text",true],["category","Categoria","text",true],["description","Descrizione","textarea",false],["level","Livello descrittivo","text",false],["order","Ordine","number",true],["visible","Visibile","checkbox",false]
@@ -107,7 +107,7 @@ async function loadRecords(name) {
       const content=document.createElement("div"), title=document.createElement("div"), meta=document.createElement("div"), desc=document.createElement("div");
       title.className="record-title";title.textContent=d.title||d.name||"(senza titolo)";
       meta.className="record-meta";meta.textContent=`ID ${s.id} · ORDINE ${d.order??"—"} · ${d.visible===true?"ATTIVO SUL SITO":"NASCOSTO SUL SITO"}`;
-      desc.className="record-desc";desc.textContent=d.description||d.category||d.price||"";
+      desc.className="record-desc";desc.textContent=d.description||d.category||"";
       content.append(title,meta,desc);
       const actions=document.createElement("div");actions.className="record-actions";
       const edit=document.createElement("button");edit.textContent="Modifica";edit.addEventListener("click",()=>openEditor(name,s.id,d));
@@ -159,6 +159,7 @@ $("#recordForm").addEventListener("submit",async event=>{
   data.updatedAt=serverTimestamp();data.updatedBy=currentUser.uid;
   try{
     if(editing.collection==="projects"&&coverFile){data.imageUrl=await saveLocalProjectCover(coverFile);}
+    if(editing.collection==="services" && editing.id) data.price=deleteField();
     if(editing.id)await updateDoc(doc(db,editing.collection,editing.id),data);
     else {data.createdAt=serverTimestamp();await addDoc(collection(db,editing.collection),data);}
     $("#recordDialog").close();await loadRecords(editing.collection);toast("Record salvato.");
@@ -278,8 +279,8 @@ $("#adminChatForm")?.addEventListener("submit",async event=>{
 });
 
 // Editor visivo controllato: salva soltanto le proprietà previste nello schema site/settings.
-async function loadVisualEditor(){const form=$("#visualEditorForm");if(!form)return;try{const snap=await getDoc(doc(db,"site","settings")),d=snap.exists()?snap.data():{};for(const key of ["heroTitleLine1","heroTitleColor1","heroTitleLine2","heroTitleColor2","projectsTitleLine1","projectsTitleLine2","contactTitle","contactIntro","accentColor","cyanColor","backgroundColor","cursorStyle","announcement","customElementText","experienceValue","experienceLabel","workValue","workLabel","trustNote"]){if(form.elements[key])form.elements[key].value=d[key]??({heroTitleLine1:"Non seguo gli standard.",heroTitleColor1:"#f3f4f6",heroTitleLine2:"Li ridefinisco.",heroTitleColor2:"#b8ff65",projectsTitleLine1:"Idee in prova.",projectsTitleLine2:"Soluzioni in costruzione.",experienceValue:"15+",experienceLabel:"ANNI DI ESPERIENZA",workValue:"200+",workLabel:"LAVORI CONCLUSI",trustNote:"Oltre 200 lavori portati a termine in totale autonomia, con attenzione alla qualità, alla cura dei dettagli e al risultato finale.",accentColor:"#b8ff65",cyanColor:"#75e7ff",backgroundColor:"#090b10",cursorStyle:"default"}[key]||"");}}catch(e){console.error(e);}}
-$("#visualEditorForm")?.addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),feedback=$("#visualEditorFeedback"),data={};for(const key of ["heroTitleLine1","heroTitleColor1","heroTitleLine2","heroTitleColor2","projectsTitleLine1","projectsTitleLine2","contactTitle","contactIntro","accentColor","cyanColor","backgroundColor","cursorStyle","announcement","customElementText","experienceValue","experienceLabel","workValue","workLabel","trustNote"])data[key]=String(form.elements[key]?.value??"").trim();button.disabled=true;feedback.textContent="Salvataggio…";try{await setDoc(doc(db,"site","settings"),data,{merge:true});feedback.textContent="Modifiche salvate. Ricarica il sito pubblico per visualizzarle.";toast("Editor visivo salvato.");}catch(err){console.error(err);feedback.textContent="Salvataggio non riuscito. Verifica le regole Firestore.";}finally{button.disabled=false;}});
+async function loadVisualEditor(){const form=$("#visualEditorForm");if(!form)return;try{const snap=await getDoc(doc(db,"site","settings")),d=snap.exists()?snap.data():{};for(const key of ["heroTitleLine1","heroTitleColor1","heroTitleLine2","heroTitleColor2","methodTitleLine1","methodTitleColor1","methodTitleLine2","methodTitleColor2","projectsTitleLine1","projectsTitleLine2","contactTitle","contactIntro","accentColor","cyanColor","backgroundColor","cursorStyle","announcement","customElementText","experienceValue","experienceLabel","workValue","workLabel","trustNote"]){if(form.elements[key])form.elements[key].value=d[key]??({heroTitleLine1:"Non seguo gli standard.",heroTitleColor1:"#f3f4f6",heroTitleLine2:"Li ridefinisco.",heroTitleColor2:"#b8ff65",methodTitleLine1:"Un’idea prende",methodTitleColor1:"#f3f4f6",methodTitleLine2:"forma, passo dopo passo.",methodTitleColor2:"#b8ff65",projectsTitleLine1:"Idee in prova.",projectsTitleLine2:"Soluzioni in costruzione.",experienceValue:"15+",experienceLabel:"ANNI DI ESPERIENZA",workValue:"200+",workLabel:"LAVORI CONCLUSI",trustNote:"Oltre 200 lavori portati a termine in totale autonomia, con attenzione alla qualità, alla cura dei dettagli e al risultato finale.",accentColor:"#b8ff65",cyanColor:"#75e7ff",backgroundColor:"#090b10",cursorStyle:"default"}[key]||"");}}catch(e){console.error(e);}}
+$("#visualEditorForm")?.addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),feedback=$("#visualEditorFeedback"),data={};for(const key of ["heroTitleLine1","heroTitleColor1","heroTitleLine2","heroTitleColor2","methodTitleLine1","methodTitleColor1","methodTitleLine2","methodTitleColor2","projectsTitleLine1","projectsTitleLine2","contactTitle","contactIntro","accentColor","cyanColor","backgroundColor","cursorStyle","announcement","customElementText","experienceValue","experienceLabel","workValue","workLabel","trustNote"])data[key]=String(form.elements[key]?.value??"").trim();button.disabled=true;feedback.textContent="Salvataggio…";try{await setDoc(doc(db,"site","settings"),data,{merge:true});feedback.textContent="Modifiche salvate. Ricarica il sito pubblico per visualizzarle.";toast("Editor visivo salvato.");}catch(err){console.error(err);feedback.textContent="Salvataggio non riuscito. Verifica le regole Firestore.";}finally{button.disabled=false;}});
 
 
 // Editor esteso: indicizza i nodi testuali della pagina pubblica e salva override selettivi.

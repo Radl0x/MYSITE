@@ -166,7 +166,8 @@
   const bottom = makeDivider('bottom', 'END OF SELECTED WORK / 03');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const seams = [top, bottom];
-  let raf = 0, time = 0;
+  let raf = 0, time = 0, lastFrame = 0;
+  const frameInterval = 1000 / 30;
   const place = item => {
     const rect = section.getBoundingClientRect();
     const y = item.edge === 'top' ? rect.top : rect.bottom;
@@ -194,41 +195,42 @@
     ctx.clearRect(0, 0, w, h);
     const mid = h * .5;
     // Animated filaments and traveling packets remain autonomous; no pointer tracking or click response.
-    for (let line = 0; line < 7; line++) {
+    for (let line = 0; line < 4; line++) {
       const phase = time * (.45 + line * .055) + offset + line * .86;
       ctx.beginPath();
-      for (let x = 0; x <= w + 3; x += 3) {
+      for (let x = 0; x <= w + 6; x += 6) {
         const nx = x / w;
         const envelope = Math.sin(Math.PI * nx) * .72 + .28;
         const amp = (3 + line * 1.45) * envelope;
         const y = mid + Math.sin(nx * 13 + phase) * amp + Math.sin(nx * 27 - phase * .7) * amp * .32;
         if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-      const alpha = .045 + (6 - line) * .013;
+      const alpha = .045 + (3 - line) * .014;
       ctx.strokeStyle = line % 3 === 0 ? `rgba(184,255,101,${alpha})` : `rgba(116,255,208,${alpha})`;
       ctx.lineWidth = line === 3 ? 1.15 : .65;
       ctx.shadowColor = line % 3 === 0 ? 'rgba(184,255,101,.38)' : 'rgba(116,255,208,.24)';
-      ctx.shadowBlur = line === 3 ? 9 : 3;
+      ctx.shadowBlur = 0;
       ctx.stroke();
     }
     ctx.shadowBlur = 0;
-    for (let i = 0; i < 13; i++) {
-      const progress = ((time * (.035 + (i % 4) * .009) + i / 13 + offset * .07) % 1);
+    for (let i = 0; i < 6; i++) {
+      const progress = ((time * (.035 + (i % 4) * .009) + i / 6 + offset * .07) % 1);
       const x = progress * w;
       const y = mid + Math.sin(progress * 13 + time + offset) * 5;
       const radius = i % 4 === 0 ? 2.1 : 1.1;
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, radius * 5);
-      grad.addColorStop(0, i % 4 === 0 ? 'rgba(184,255,101,.8)' : 'rgba(116,255,208,.62)');
-      grad.addColorStop(1, 'rgba(116,255,208,0)');
-      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x, y, radius * 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = i % 4 === 0 ? 'rgba(184,255,101,.20)' : 'rgba(116,255,208,.14)';
+      ctx.fillRect(x - radius * 2, y - radius * 2, radius * 4, radius * 4);
       ctx.fillStyle = i % 4 === 0 ? 'rgba(220,255,174,.95)' : 'rgba(157,255,224,.68)';
       ctx.fillRect(x - radius / 2, y - radius / 2, radius, radius);
     }
   };
-  const frame = () => {
+  const frame = now => {
     raf = 0;
     if (document.hidden) return;
-    if (!reduced.matches) time += .018;
+    if (now && now - lastFrame < frameInterval) { schedule(); return; }
+    lastFrame = now || performance.now();
+    if (!seams.some(item => item.seam.classList.contains('is-boundary-visible'))) return;
+    if (!reduced.matches) time += .012;
     seams.forEach((item, i) => paint(item, i * 1.7));
     if (!reduced.matches) raf = requestAnimationFrame(frame);
   };
